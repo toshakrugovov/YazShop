@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -o errexit
 
+# Обновление инструментов сборки
+pip install --upgrade pip setuptools wheel
+
 # Установка зависимостей
 pip install -r requirements.txt
 
