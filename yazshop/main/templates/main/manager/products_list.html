@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Управление товарами - YazShop{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="table-wrap">
+    <div class="table-header">
+        <h1>Управление товарами</h1>
+        <div class="table-filters">
+            <form method="get" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <input type="text" name="q" value="{{ q }}" placeholder="Поиск...">
+                <select name="category">
+                    <option value="">Все категории</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if category_id == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.category_name }}</option>
+                    {% endfor %}
+                </select>
+                <select name="brand">
+                    <option value="">Все бренды</option>
+                    {% for brand in brands %}
+                    <option value="{{ brand.id }}" {% if brand_id == brand.id|stringformat:"s" %}selected{% endif %}>{{ brand.brand_name }}</option>
+                    {% endfor %}
+                </select>
+                <select name="available">
+                    <option value="">Все</option>
+                    <option value="yes" {% if available_filter == 'yes' %}selected{% endif %}>Доступны</option>
+                    <option value="no" {% if available_filter == 'no' %}selected{% endif %}>Недоступны</option>
+                </select>
+                <button type="submit">Фильтровать</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="table-actions-header">
+        <a href="{% url 'manager_dashboard' %}">← Назад</a>
+        <a href="{% url 'manager_product_add' %}">+ Добавить товар</a>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Категория</th>
+                <th>Бренд</th>
+                <th>Цена</th>
+                <th>Остаток</th>
+                <th>Статус</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in page_obj %}
+            <tr>
+                <td>{{ product.id }}</td>
+                <td>{{ product.product_name|truncatewords:10 }}</td>
+                <td>{{ product.category.category_name|default:"-" }}</td>
+                <td>{{ product.brand.brand_name|default:"-" }}</td>
+                <td>{{ product.price }} ₽</td>
+                <td>{{ product.stock_quantity }}</td>
+                <td>
+                    <span class="status-badge {% if product.is_available %}status-available{% else %}status-unavailable{% endif %}">
+                        {% if product.is_available %}Доступен{% else %}Недоступен{% endif %}
+                    </span>
+                </td>
+                <td class="table-actions">
+                    <a href="{% url 'manager_product_edit' product_id=product.id %}">Изменить</a>
+                    <button type="button" class="danger" onclick="deleteProduct({{ product.id }}, '{{ product.product_name|escapejs }}')">Удалить</button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 40px;">Товары не найдены</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="pager">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&category={{ category_id }}&brand={{ brand_id }}&available={{ available_filter }}">← Назад</a>
+        {% else %}
+        <span>← Назад</span>
+        {% endif %}
+        <span>Стр. {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&category={{ category_id }}&brand={{ brand_id }}&available={{ available_filter }}">Вперед →</a>
+        {% else %}
+        <span>Вперед →</span>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+async function deleteProduct(productId, productName) {
+    if (!confirm(`Удалить товар "${productName}"?`)) {
+        return;
+    }
+    
+    const result = await ManagementAPI.products.delete(productId);
+    
+    if (result.success) {
+        alert('Товар успешно удален');
+        location.reload();
+    } else {
+        alert('Ошибка: ' + (result.error || 'Не удалось удалить товар'));
+    }
+}
+</script>
+{% endblock %}
+

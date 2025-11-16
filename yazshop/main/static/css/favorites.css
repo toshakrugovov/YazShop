@@ -1,0 +1,219 @@
+/* === Темная и светлая тема === */
+body.light {
+    --bg-color: #ffffff;
+    --text-color: #000000;
+    --card-bg: #ffffff;
+    --card-text: #000000;
+    --brand: #1a1a1a;
+    --brand-contrast: #ffffff;
+    --discount-color: #d9534f;
+    --modal-border-color: #000000;
+}
+
+body.dark, .dark-theme {
+    --bg-color: #1e1e1e;
+    --text-color: #ffffff;
+    --card-bg: #2a2a2a;
+    --card-text: #ffffff;
+    --brand: #fff;
+    --brand-contrast: #000000;
+    --discount-color: #ff6b6b;
+    --modal-border-color: #ffffff;
+}
+
+/* === Секция товаров === */
+.products-section {
+    padding: 80px 20px 60px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 25px;
+    justify-items: center;
+}
+
+/* === Карточка товара === */
+.product-card {
+    background-color: var(--card-bg);
+    color: var(--card-text);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    max-width: 280px;
+    width: 100%;
+    position: relative;
+    cursor: pointer;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+/* === Изображение товара === */
+.product-image {
+    width: 100%;
+    height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f7f7f7;
+    color: #666;
+}
+
+body.dark .product-image {
+    background-color: #1b1b1b;
+    color: #aaa;
+}
+
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+}
+
+.product-card:hover .product-image img {
+    transform: scale(1.05);
+}
+
+/* === Информация о товаре === */
+.product-info {
+    padding: 10px 15px;
+}
+
+.product-info h3 {
+    font-size: 18px;
+    margin: 5px 0;
+}
+
+.product-price {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.product-old-price {
+    text-decoration: line-through;
+    color: #888;
+    margin-right: 5px;
+}
+
+.product-discount {
+    background: var(--discount-color);
+    color: #ffffff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 5px;
+    display: inline-block;
+}
+
+/* === Действия с товаром === */
+.product-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.product-actions form button {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.add-cart {
+    background-color: var(--brand);
+    color: var(--brand-contrast);
+}
+
+.add-cart:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.remove-fav {
+    background-color: #f0f0f0;
+    color: #1a1a1a;
+}
+
+body.dark .remove-fav {
+    background-color: #2a2a2a;
+    color: #ffffff;
+}
+
+.remove-fav:hover {
+    background-color: #e0e0e0;
+}
+
+body.dark .remove-fav:hover {
+    background-color: #3a3a3a;
+}
+
+/* === Адаптивность === */
+@media (max-width: 768px) {
+    .products-section {
+        padding: 60px 15px 40px 15px;
+    }
+    
+    .products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 16px;
+    }
+    
+    .product-card {
+        max-width: 100%;
+    }
+    
+    .product-image {
+        height: 250px;
+    }
+    
+    .product-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .product-actions form button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .products-section {
+        padding: 50px 10px 30px 10px;
+    }
+    
+    .products-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .product-image {
+        height: 220px;
+    }
+    
+    .product-info {
+        padding: 12px;
+    }
+    
+    .product-info h3 {
+        font-size: 16px;
+    }
+    
+    .product-price {
+        font-size: 16px;
+    }
+}
+

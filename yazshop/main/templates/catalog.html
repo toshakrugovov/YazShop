@@ -1,0 +1,655 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}YazShop - Каталог товаров{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+<link rel="stylesheet" href="{% static 'css/catalog.css' %}">
+{% endblock %}
+
+{% block content %}
+<script>
+const isAuthenticated = {{ user.is_authenticated|yesno:"true,false" }};
+</script>
+
+<!-- Фильтры и поиск -->
+<section class="catalog-filters">
+    <div class="container filters-container">
+        <form method="get" class="filters-form">
+            <input type="text" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Поиск товаров..." class="search-input">
+            <select name="category" class="custom-select">
+                <option value="">Все категории</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if request.GET.category|stringformat:"s" == category.id|stringformat:"s" %}selected{% endif %}>{{ category.category_name }}</option>
+                {% endfor %}
+            </select>
+            <select name="sort" class="custom-select">
+                <option value="">Сортировка</option>
+                <option value="price_asc" {% if request.GET.sort == 'price_asc' %}selected{% endif %}>По возрастанию цены</option>
+                <option value="price_desc" {% if request.GET.sort == 'price_desc' %}selected{% endif %}>По убыванию цены</option>
+                <option value="popular" {% if request.GET.sort == 'popular' %}selected{% endif %}>Популярные</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Применить</button>
+        </form>
+    </div>
+</section>
+
+<!-- Секция товаров -->
+<section class="products-section catalog-section">
+    <div class="container">
+        {% if products %}
+        <div class="products-grid">
+            {% for product in products %}
+            <div class="product-card" onclick="openModal('{{ product.id }}')">
+                <div class="product-image">
+                    {% if product.main_image_url %}
+                        <img src="{{ product.main_image_url }}" alt="{{ product.product_name }}">
+                    {% else %}
+                        Нет изображения
+                    {% endif %}
+                </div>
+                <div class="product-info">
+                    <h3 class="product-name">{{ product.product_name }}</h3>
+                    <div class="product-price">
+                        {% if product.discount > 0 %}
+                            <span class="product-old-price">{{ product.price }} ₽</span>
+                            {{ product.final_price|floatformat:0 }} ₽
+                            <span class="product-discount">-{{ product.discount }}%</span>
+                        {% else %}
+                            {{ product.price }} ₽
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+            <p>Товары не найдены.</p>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Модальное окно -->
+<div id="productModal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="closeModal()">&times;</span>
+        <div class="modal-left">
+            <div class="modal-image-wrapper">
+                <button class="slider-arrow prev" onclick="prevImage()" aria-label="Предыдущее изображение">‹</button>
+                <img id="modalMainImage" class="modal-main-image" src="" alt="">
+                <button class="slider-arrow next" onclick="nextImage()" aria-label="Следующее изображение">›</button>
+            </div>
+            <div class="modal-thumbnails" id="modalThumbnails"></div>
+        </div>
+        <div class="modal-right">
+            <h2 id="modalProductName"></h2>
+            <p id="modalPrice" style="font-weight:bold;"></p>
+            <p id="modalAvailability"></p>
+            <p id="modalBrand"></p>
+            <p id="modalCountry"></p>
+            <p id="modalSupplier"></p>
+            <p id="modalDescription"></p>
+
+            <div class="modal-sizes">
+                <label for="modalSizeSelect">Выберите размер:</label>
+                <select id="modalSizeSelect">
+                    <option value="" disabled selected>Выберите размер</option>
+                </select>
+                <div class="size-warning" id="sizeWarning">⚠ Пожалуйста, выберите размер!</div>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="add-cart" id="cartButton" onclick="toggleCart()">Добавить в корзину</button>
+                <button class="add-fav" id="favButton" onclick="toggleFavorites()">Добавить в избранное</button>
+            </div>
+
+            <!-- Секция отзывов -->
+            <div class="modal-reviews" id="modalReviews">
+                <h3>Отзывы</h3>
+                <div class="reviews-summary" id="reviewsSummary">
+                    <div class="rating-display">
+                        <span class="avg-rating" id="avgRating">-</span>
+                        <div class="stars" id="starsDisplay"></div>
+                        <span class="reviews-count" id="reviewsCount">(0 отзывов)</span>
+                    </div>
+                </div>
+                
+                <!-- Форма добавления отзыва скрыта в модальном окне, доступна на странице отзывов -->
+                
+                <!-- Список отзывов -->
+                <div class="reviews-list" id="reviewsList">
+                    <p class="loading-reviews">Загрузка отзывов...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const products = {
+    {% for product in products %}
+    "{{ product.id }}": {
+        id: "{{ product.id }}",
+        name: "{{ product.product_name|escapejs }}",
+        main: "{{ product.main_image_url|default:'' }}",
+        images: [
+            "{{ product.image_url_1|default:'' }}",
+            "{{ product.image_url_2|default:'' }}",
+            "{{ product.image_url_3|default:'' }}",
+            "{{ product.image_url_4|default:'' }}"
+        ].filter(Boolean),
+        price: {% if product.discount > 0 %}"{{ product.final_price|floatformat:0 }} ₽ ({{ product.price }} ₽)"{% else %}"{{ product.price }} ₽"{% endif %},
+        availability: "{{ product.is_available|yesno:'В наличии,Нет в наличии' }}",
+        brand: "{{ product.brand.brand_name|default:'-'|escapejs }}",
+        country: "{{ product.brand.brand_country|default:'-'|escapejs }}",
+        supplier: "{{ product.supplier.supplier_name|default:'-'|escapejs }}",
+        description: "{{ product.product_description|default:'Нет описания'|escapejs }}",
+        sizes: [
+            {% for size in product.sizes.all %}
+            {id: "{{ size.id }}", label: "{{ size.size_label }}", stock: {{ size.size_stock }} },
+            {% endfor %}
+        ]
+    },
+    {% endfor %}
+};
+
+function openModal(id) {
+    const product = products[id];
+    if (!product) return;
+
+    document.getElementById("modalProductName").textContent = product.name;
+    document.getElementById("modalPrice").textContent = product.price;
+    document.getElementById("modalAvailability").textContent = "Наличие: " + product.availability;
+    document.getElementById("modalBrand").textContent = "Бренд: " + product.brand;
+    document.getElementById("modalCountry").textContent = "Страна производства: " + product.country;
+    document.getElementById("modalSupplier").textContent = "Поставщик: " + product.supplier;
+    document.getElementById("modalDescription").textContent = "Описание: " + product.description;
+
+    const mainImg = document.getElementById("modalMainImage");
+    const thumbnails = document.getElementById("modalThumbnails");
+    thumbnails.innerHTML = "";
+    
+    // Собираем все изображения (главное + дополнительные)
+    window.currentImages = [];
+    if (product.main) {
+        window.currentImages.push(product.main);
+    }
+    if (product.images && product.images.length > 0) {
+        product.images.forEach(url => {
+            if (url && !window.currentImages.includes(url)) {
+                window.currentImages.push(url);
+            }
+        });
+    }
+    
+    // Отображаем первое изображение как главное
+    window.currentIndex = 0;
+    if (window.currentImages.length > 0) {
+        mainImg.src = window.currentImages[0];
+    }
+    
+    // Создаем мини-галерею под основным изображением
+    if (window.currentImages.length > 0) {
+        window.currentImages.forEach((url, index) => {
+            const img = document.createElement("img");
+            img.src = url;
+            if (index === 0) {
+                img.classList.add("active");
+            }
+            img.onclick = () => {
+                window.currentIndex = index;
+                updateActiveThumb();
+            };
+            thumbnails.appendChild(img);
+        });
+    }
+
+    const sizeSelect = document.getElementById("modalSizeSelect");
+    sizeSelect.innerHTML='<option value="" disabled selected>Выберите размер</option>';
+    product.sizes.forEach(size=>{
+        const option=document.createElement("option");
+        option.value=size.id;
+        option.textContent=size.label+(size.stock===0?" (Нет в наличии)":"");
+        option.disabled=size.stock===0;
+        sizeSelect.appendChild(option);
+    });
+
+    document.getElementById("sizeWarning").style.display = "none";
+    document.getElementById("productModal").style.display="flex";
+    
+    // Обновляем состояние стрелок
+    updateArrowStates();
+    
+    // Загружаем отзывы
+    loadReviews(id);
+    
+    // Сбрасываем форму отзыва (если она существует)
+    const reviewRating = document.getElementById("reviewRating");
+    const reviewText = document.getElementById("reviewText");
+    if (reviewRating) reviewRating.value = "0";
+    if (reviewText) reviewText.value = "";
+    const starsInput = document.querySelectorAll(".stars-input .star");
+    if (starsInput.length > 0) {
+        starsInput.forEach(star => star.classList.remove("active"));
+    }
+    
+    // Сохраняем текущий productId для использования в функциях
+    window.currentProductId = String(id);
+    
+    // Проверяем состояние товара (в избранном/корзине) и обновляем кнопки
+    if (isAuthenticated) {
+        checkProductStatus(id);
+    } else {
+        // Если не авторизован, показываем стандартные кнопки
+        updateButtonStates(false, false);
+    }
+}
+
+function closeModal() { document.getElementById("productModal").style.display="none"; }
+
+function showSizeWarning(message) {
+    const warning = document.getElementById("sizeWarning");
+    warning.textContent = message;
+    warning.style.display = "block";
+}
+
+// Переменные для хранения состояния товара
+let productIsInCart = false;
+let productIsFavorite = false;
+
+function checkProductStatus(productId) {
+    if (!isAuthenticated) return;
+    
+    fetch(`/product/${parseInt(productId)}/status/`)
+        .then(r => r.json())
+        .then(data => {
+            productIsInCart = data.is_in_cart;
+            productIsFavorite = data.is_favorite;
+            updateButtonStates(data.is_favorite, data.is_in_cart);
+        })
+        .catch(() => {
+            // В случае ошибки показываем стандартные кнопки
+            updateButtonStates(false, false);
+        });
+}
+
+function updateButtonStates(isFavorite, isInCart) {
+    const favButton = document.getElementById("favButton");
+    const cartButton = document.getElementById("cartButton");
+    
+    if (favButton) {
+        if (isFavorite) {
+            favButton.textContent = "Удалить из избранного";
+            favButton.classList.add("remove-fav");
+        } else {
+            favButton.textContent = "Добавить в избранное";
+            favButton.classList.remove("remove-fav");
+        }
+    }
+    
+    if (cartButton) {
+        if (isInCart) {
+            cartButton.textContent = "Удалить из корзины";
+            cartButton.classList.add("remove-cart");
+        } else {
+            cartButton.textContent = "Добавить в корзину";
+            cartButton.classList.remove("remove-cart");
+        }
+    }
+}
+
+function toggleCart() {
+    if (!isAuthenticated) {
+        alert("Пожалуйста, авторизуйтесь!");
+        return;
+    }
+    
+    const productId = window.currentProductId;
+    if (!productId) return;
+    
+    if (productIsInCart) {
+        // Удаляем из корзины
+        removeFromCart(productId);
+    } else {
+        // Добавляем в корзину
+        addToCart();
+    }
+}
+
+function toggleFavorites() {
+    if (!isAuthenticated) {
+        alert("Пожалуйста, авторизуйтесь!");
+        return;
+    }
+    
+    const productId = window.currentProductId;
+    if (!productId) return;
+    
+    if (productIsFavorite) {
+        // Удаляем из избранного
+        removeFromFavorites(productId);
+    } else {
+        // Добавляем в избранное
+        addToFavorites(productId);
+    }
+}
+
+function addToCart() {
+    const productId = window.currentProductId;
+    const sizeSelect = document.getElementById("modalSizeSelect");
+    const sizeId = sizeSelect.value;
+
+    if (!sizeId) { 
+        showSizeWarning("⚠ Пожалуйста, выберите размер!"); 
+        return; 
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if(document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for(let cookie of cookies){
+                cookie = cookie.trim();
+                if(cookie.startsWith(name + '=')){
+                    cookieValue = decodeURIComponent(cookie.slice(name.length + 1));
+                    break;
+                }
+            }
+        }
+        if(!cookieValue){
+            const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+            if(csrfInput) cookieValue = csrfInput.value;
+        }
+        return cookieValue;
+    }
+    
+    fetch('/api/cart/', {
+        method:"POST",
+        headers:{ 
+            "Content-Type":"application/json", 
+            "X-CSRFToken": getCookie('csrftoken')
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ product_id: parseInt(productId), size_id: parseInt(sizeId), quantity:1 })
+    }).then(r=>r.json()).then(data=>{
+        if(data.success){
+            productIsInCart = true;
+            updateButtonStates(productIsFavorite, true);
+        }
+    }).catch(() => {});
+}
+
+function removeFromCart(productId) {
+    // Получаем cart item id из корзины (нужно будет получить через API)
+    fetch('/api/cart/', {
+        method:"GET",
+        headers:{ "X-CSRFToken": getCookie('csrftoken') },
+        credentials: 'same-origin'
+    }).then(r=>r.json()).then(cartData=>{
+        if(cartData.items) {
+            const cartItem = cartData.items.find(item => item.product === parseInt(productId));
+            if(cartItem) {
+                fetch(`/api/cart/items/${cartItem.id}/`, {
+                    method:"DELETE",
+                    headers:{ "X-CSRFToken": getCookie('csrftoken') },
+                    credentials: 'same-origin'
+                }).then(r=>{
+                    if(r.ok || r.status === 204){
+                        productIsInCart = false;
+                        updateButtonStates(productIsFavorite, false);
+                    }
+                }).catch(() => {});
+            }
+        }
+    }).catch(() => {});
+}
+
+function addToFavorites(productId) {
+    fetch("/api/favorites/", {
+        method:"POST",
+        headers:{ 
+            "Content-Type":"application/json", 
+            "X-CSRFToken": getCookie('csrftoken')
+        },
+        credentials: 'same-origin',
+        body:JSON.stringify({ product_id: parseInt(productId) })
+    }).then(resp=>resp.json()).then(data=>{
+        if(data.success){
+            productIsFavorite = true;
+            updateButtonStates(true, productIsInCart);
+        }
+    }).catch(() => {});
+}
+
+function removeFromFavorites(productId) {
+    fetch(`/api/favorites/${parseInt(productId)}/`, {
+        method:"DELETE",
+        headers:{ "X-CSRFToken": getCookie('csrftoken') },
+        credentials: 'same-origin'
+    }).then(resp=>{
+        if(resp.ok || resp.status === 204){
+            productIsFavorite = false;
+            updateButtonStates(false, productIsInCart);
+        }
+    }).catch(() => {});
+}
+
+window.onclick = function(event){ const modal=document.getElementById("productModal"); if(event.target==modal) modal.style.display="none"; }
+
+// Функции для работы с отзывами
+let currentProductId = null;
+let startX = null;
+
+function updateActiveThumb() {
+    const thumbnails = document.getElementById("modalThumbnails");
+    const mainImg = document.getElementById("modalMainImage");
+    const wrapper = document.querySelector(".modal-image-wrapper");
+    if (!window.currentImages || window.currentImages.length === 0) return;
+    
+    // Плавный переход
+    wrapper.classList.add("fade");
+    setTimeout(() => {
+        mainImg.src = window.currentImages[window.currentIndex];
+        wrapper.classList.remove("fade");
+    }, 200);
+    
+    // Обновляем активную миниатюру
+    thumbnails.querySelectorAll("img").forEach((el, idx) => {
+        el.classList.toggle("active", idx === window.currentIndex);
+    });
+    
+    // Обновляем состояние стрелок
+    updateArrowStates();
+}
+
+function updateArrowStates() {
+    const prevBtn = document.querySelector(".slider-arrow.prev");
+    const nextBtn = document.querySelector(".slider-arrow.next");
+    
+    if (!window.currentImages || window.currentImages.length <= 1) {
+        if (prevBtn) prevBtn.classList.add("disabled");
+        if (nextBtn) nextBtn.classList.add("disabled");
+    } else {
+        if (prevBtn) prevBtn.classList.remove("disabled");
+        if (nextBtn) nextBtn.classList.remove("disabled");
+    }
+}
+
+function prevImage() {
+    if (!window.currentImages || window.currentImages.length === 0) return;
+    window.currentIndex = (window.currentIndex - 1 + window.currentImages.length) % window.currentImages.length;
+    updateActiveThumb();
+}
+
+function nextImage() {
+    if (!window.currentImages || window.currentImages.length === 0) return;
+    window.currentIndex = (window.currentIndex + 1) % window.currentImages.length;
+    updateActiveThumb();
+}
+
+// Клавиатура: стрелки влево/вправо
+document.addEventListener("keydown", (e) => {
+    const modal = document.getElementById("productModal");
+    if (modal.style.display === "flex") {
+        if (e.key === "ArrowLeft") prevImage();
+        if (e.key === "ArrowRight") nextImage();
+        if (e.key === "Escape") closeModal();
+    }
+});
+
+// Свайп
+const mainImgEl = document.getElementById("modalMainImage");
+mainImgEl.addEventListener("touchstart", (e) => {
+    startX = e.touches[0].clientX;
+}, { passive: true });
+mainImgEl.addEventListener("touchend", (e) => {
+    if (startX === null) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) > 40) {
+        if (dx > 0) prevImage(); else nextImage();
+    }
+    startX = null;
+}, { passive: true });
+
+function loadReviews(productId) {
+    currentProductId = productId;
+    const reviewsList = document.getElementById("reviewsList");
+    reviewsList.innerHTML = "<p class='loading-reviews'>Загрузка отзывов...</p>";
+    
+    // Загружаем только 2 отзыва для модального окна
+    fetch(`/product/${productId}/reviews/?limit=2`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                displayReviews(data, productId);
+            } else {
+                reviewsList.innerHTML = "<p>Ошибка загрузки отзывов</p>";
+            }
+        })
+        .catch(() => {
+            reviewsList.innerHTML = "<p>Ошибка загрузки отзывов</p>";
+        });
+}
+
+function displayReviews(data, productId) {
+    const avgRating = document.getElementById("avgRating");
+    const starsDisplay = document.getElementById("starsDisplay");
+    const reviewsCount = document.getElementById("reviewsCount");
+    const reviewsList = document.getElementById("reviewsList");
+    const reviewsContainer = document.getElementById("reviewsList");
+    
+    avgRating.textContent = data.avg_rating || "0.0";
+    reviewsCount.textContent = `(${data.total_reviews} ${data.total_reviews === 1 ? 'отзыв' : data.total_reviews < 5 ? 'отзыва' : 'отзывов'})`;
+    
+    // Отображаем звезды
+    starsDisplay.innerHTML = "";
+    const rating = Math.round(data.avg_rating || 0);
+    for (let i = 1; i <= 5; i++) {
+        const star = document.createElement("span");
+        star.textContent = "★";
+        star.className = i <= rating ? "star-filled" : "star-empty";
+        starsDisplay.appendChild(star);
+    }
+    
+    // Отображаем список отзывов (максимум 2)
+    if (data.reviews.length === 0) {
+        let html = "<p class='no-reviews'>Пока нет отзывов. Будьте первым!</p>";
+        reviewsList.innerHTML = html;
+    } else {
+        reviewsList.innerHTML = "";
+        data.reviews.forEach(review => {
+            const reviewItem = document.createElement("div");
+            reviewItem.className = "review-item";
+            reviewItem.innerHTML = `
+                <div class="review-header">
+                    <span class="review-author">${review.user_name}</span>
+                    <div class="review-rating">
+                        ${"★".repeat(review.rating)}${"☆".repeat(5 - review.rating)}
+                    </div>
+                    <span class="review-date">${review.created_at}</span>
+                </div>
+                ${review.text ? `<div class="review-text">${review.text}</div>` : ""}
+            `;
+            reviewsList.appendChild(reviewItem);
+        });
+    }
+    
+    // Всегда добавляем кнопку "Посмотреть все отзывы" (для всех пользователей)
+    const viewAllButton = document.createElement("div");
+    viewAllButton.className = "reviews-more";
+    const links = [];
+    
+    // Кнопка "Посмотреть все отзывы" - всегда видна
+    links.push(`<a href="/product/${productId}/reviews/page/" class="btn-more-reviews">Посмотреть все отзывы →</a>`);
+    
+    // Кнопка "Написать отзыв" - только для авторизованных, которые могут писать
+    if (isAuthenticated && data.user_can_review) {
+        links.push(`<a href="/product/${productId}/reviews/page/" class="btn-more-reviews">Написать отзыв →</a>`);
+    }
+    
+    viewAllButton.innerHTML = links.join(" ");
+    reviewsList.appendChild(viewAllButton);
+}
+
+function setRating(rating) {
+    const reviewRating = document.getElementById("reviewRating");
+    if (reviewRating) reviewRating.value = rating;
+    document.querySelectorAll(".stars-input .star").forEach((star, index) => {
+        if (index < rating) {
+            star.classList.add("active");
+        } else {
+            star.classList.remove("active");
+        }
+    });
+}
+
+function submitReview(event) {
+    event.preventDefault();
+    if (!isAuthenticated) {
+        alert("Пожалуйста, авторизуйтесь!");
+        return;
+    }
+    
+    const reviewRating = document.getElementById("reviewRating");
+    const reviewText = document.getElementById("reviewText");
+    
+    if (!reviewRating || !reviewText) {
+        return; // Форма отзывов не существует на этой странице
+    }
+    
+    const rating = parseInt(reviewRating.value);
+    const text = reviewText.value.trim();
+    
+    if (rating === 0) {
+        alert("Пожалуйста, выберите оценку!");
+        return;
+    }
+    
+    fetch(`/product/${currentProductId}/review/add/`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({
+            rating: rating,
+            review_text: text
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert("Отзыв добавлен!");
+            reviewText.value = "";
+            reviewRating.value = "0";
+            document.querySelectorAll(".stars-input .star").forEach(star => star.classList.remove("active"));
+            loadReviews(currentProductId);
+        } else {
+            alert("Ошибка: " + (data.message || "Не удалось добавить отзыв"));
+        }
+    })
+    .catch(() => alert("Ошибка при отправке отзыва"));
+}
+</script>
+{% endblock %}

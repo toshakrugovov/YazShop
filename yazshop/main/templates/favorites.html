@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}YazShop - Избранное{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+<link rel="stylesheet" href="{% static 'css/favorites.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="products-section">
+    {% if user.is_authenticated %}
+        <h2>Ваши избранные товары</h2>
+        {% if favorites %}
+            <div class="products-grid">
+                {% for fav in favorites %}
+                    <div class="product-card">
+                        <div class="product-image">
+                            {% if fav.product.main_image_url %}
+                                <img src="{{ fav.product.main_image_url }}" alt="{{ fav.product.product_name }}">
+                            {% else %}
+                                Нет изображения
+                            {% endif %}
+                        </div>
+                        <div class="product-info">
+                            <h3>{{ fav.product.product_name }}</h3>
+                            <div class="product-price">
+                                {% if fav.product.discount > 0 %}
+                                    <span class="product-old-price">{{ fav.product.price }} ₽</span>
+                                    {{ fav.product.final_price|floatformat:0 }} ₽
+                                    <span class="product-discount">-{{ fav.product.discount }}%</span>
+                                {% else %}
+                                    {{ fav.product.price }} ₽
+                                {% endif %}
+                            </div>
+                            <div class="product-actions">
+                                <button type="button" class="add-cart" onclick="addToCart({{ fav.product.id }})">Добавить в корзину</button>
+                                <button type="button" class="remove-fav" onclick="removeFromFavorites({{ fav.product.id }})">Удалить</button>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>У вас пока нет товаров в избранном.</p>
+        {% endif %}
+    {% else %}
+        <p>Пожалуйста, <a href="{% url 'login' %}">войдите в аккаунт</a>, чтобы просматривать избранное.</p>
+    {% endif %}
+</section>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if(document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for(let cookie of cookies){
+            cookie = cookie.trim();
+            if(cookie.startsWith(name + '=')){
+                cookieValue = decodeURIComponent(cookie.slice(name.length + 1));
+                break;
+            }
+        }
+    }
+    if(!cookieValue){
+        const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if(csrfInput) cookieValue = csrfInput.value;
+    }
+    return cookieValue;
+}
+
+async function addToCart(productId) {
+    try {
+        const response = await fetch('/api/cart/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ product_id: productId, quantity: 1 })
+        });
+        const result = await response.json();
+        if (result.success) {
+            alert('Товар добавлен в корзину');
+        } else {
+            alert(result.error || 'Ошибка при добавлении в корзину');
+        }
+    } catch(err) {
+        alert('Ошибка соединения: ' + err.message);
+    }
+}
+
+async function removeFromFavorites(productId) {
+    if (!confirm('Удалить товар из избранного?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/favorites/${productId}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            credentials: 'same-origin'
+        });
+        
+        if (response.ok || response.status === 204) {
+            location.reload();
+        } else {
+            const result = await response.json();
+            alert(result.error || 'Ошибка при удалении из избранного');
+        }
+    } catch(err) {
+        alert('Ошибка соединения: ' + err.message);
+    }
+}
+</script>
+{% endblock %}

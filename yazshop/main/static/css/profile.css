@@ -1,0 +1,283 @@
+/* =================== СТИЛИ ДЛЯ ПРОФИЛЯ =================== */
+
+.profile-content {
+    display: flex;
+    justify-content: center;
+    padding: 60px 20px;
+}
+
+.profile-container {
+    width: 100%;
+    max-width: 480px;
+    background-color: var(--bg-color);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    padding: 40px 30px;
+    text-align: center;
+    font-family: 'Inter', 'Roboto', sans-serif;
+}
+
+/* Уведомления в профиле (левый нижний угол) */
+.profile-notifications {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    width: 320px;
+    max-width: calc(100% - 40px);
+    background: var(--bg-color);
+    border: 1px solid #000;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+    overflow: hidden;
+    z-index: 1100;
+}
+
+.profile-notifications-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid #000;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.profile-notifications-list {
+    max-height: 280px;
+    overflow: auto;
+}
+
+.notification-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-empty {
+    padding: 12px;
+    font-size: 14px;
+    color: var(--text-color-secondary);
+}
+
+/* Плавающая кнопка-колокол (слева внизу) */
+.notifications-bell {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1101;
+    border: 1px solid #000000;
+    background: var(--bg-color);
+    color: var(--text-color);
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+    padding: 0;
+}
+
+.notifications-bell:hover {
+    filter: brightness(90%);
+}
+
+.notifications-bell svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+}
+
+/* Крестик для закрытия */
+.notifications-close-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: var(--text-color);
+    font-size: 20px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+}
+
+.notifications-close-btn:hover {
+    opacity: 0.7;
+}
+
+/* Заголовок */
+.profile-container h2 {
+    margin-bottom: 30px;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+/* Информация о пользователе */
+.profile-info {
+    margin-bottom: 32px;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--text-color-secondary);
+}
+
+.profile-info p {
+    margin: 6px 0;
+}
+
+/* Кнопки */
+.buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn {
+    width: 100%;
+    padding: 10px 0;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 15px;
+    border: 1px solid;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    display: block;
+    transition: all 0.2s ease;
+}
+
+/* Светлая тема */
+body.light .btn {
+    background-color: #ffffff;
+    color: #000000;
+    border-color: #000000;
+}
+
+/* Темная тема */
+body.dark .btn {
+    background-color: #000000;
+    color: #ffffff;
+    border-color: #ffffff;
+}
+
+/* Hover эффект */
+.btn:hover {
+    filter: brightness(90%);
+}
+
+/* Кнопка удаления */
+.btn.danger {
+    border-color: #e74c3c;
+    color: #e74c3c;
+}
+
+.btn.danger:hover {
+    background-color: #e74c3c;
+    color: #ffffff;
+}
+
+/* Адаптив для мобильных */
+@media (max-width: 768px) {
+    .profile-content {
+        padding: 50px 15px;
+    }
+    
+    .profile-container {
+        padding: 30px 20px;
+    }
+    
+    .profile-container h2 {
+        font-size: 22px;
+    }
+    
+    .profile-info {
+        font-size: 15px;
+    }
+    
+    .profile-notifications {
+        left: 10px;
+        bottom: 10px;
+        width: calc(100% - 20px);
+        max-width: calc(100% - 20px);
+    }
+    
+    .notifications-bell {
+        left: 10px;
+        bottom: 10px;
+        width: 44px;
+        height: 44px;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-content {
+        padding: 40px 10px;
+    }
+    
+    .profile-container {
+        padding: 24px 16px;
+        border-radius: 8px;
+    }
+    
+    .profile-container h2 {
+        font-size: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .profile-info {
+        font-size: 14px;
+        margin-bottom: 24px;
+    }
+    
+    .buttons {
+        gap: 10px;
+    }
+    
+    .btn {
+        padding: 12px 0;
+        font-size: 14px;
+    }
+    
+    .profile-notifications {
+        left: 5px;
+        bottom: 5px;
+        width: calc(100% - 10px);
+        max-width: calc(100% - 10px);
+        border-radius: 8px;
+    }
+    
+    .profile-notifications-header {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+    
+    .notification-item {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+    
+    .notifications-bell {
+        left: 5px;
+        bottom: 5px;
+        width: 40px;
+        height: 40px;
+    }
+    
+    .notifications-bell svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+

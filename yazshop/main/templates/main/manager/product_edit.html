@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if product %}Редактирование товара{% else %}Добавление товара{% endif %} - YazShop{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="form-wrap">
+    <div class="dashboard-header">
+        <h1>{% if product %}Редактирование товара{% else %}Добавление товара{% endif %}</h1>
+        <div class="dashboard-actions">
+            <a href="{% url 'manager_products_list' %}">← Назад</a>
+        </div>
+    </div>
+
+    <form id="product-form" class="form-container">
+        {% csrf_token %}
+        <div id="form-error" style="color: #e74c3c; display: none; margin-bottom: 16px;"></div>
+        
+        <div class="form-group">
+            <label for="product_name">Название товара *</label>
+            <input type="text" id="product_name" name="product_name" value="{{ product.product_name|default:'' }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="product_description">Описание</label>
+            <textarea id="product_description" name="product_description">{{ product.product_description|default:'' }}</textarea>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="price">Цена *</label>
+                <input type="number" id="price" name="price" step="0.01" value="{{ product.price|default:'0' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="discount">Скидка (%)</label>
+                <input type="number" id="discount" name="discount" step="0.01" value="{{ product.discount|default:'0' }}">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="stock_quantity">Остаток на складе *</label>
+                <input type="number" id="stock_quantity" name="stock_quantity" value="{{ product.stock_quantity|default:'0' }}" required>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="is_available" {% if product.is_available or not product %}checked{% endif %}>
+                    Доступен для продажи
+                </label>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="category_id">Категория</label>
+                <select id="category_id" name="category_id">
+                    <option value="">Не выбрано</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if product.category_id == cat.id %}selected{% endif %}>{{ cat.category_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="brand_id">Бренд</label>
+                <select id="brand_id" name="brand_id">
+                    <option value="">Не выбрано</option>
+                    {% for brand in brands %}
+                    <option value="{{ brand.id }}" {% if product.brand_id == brand.id %}selected{% endif %}>{{ brand.brand_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="supplier_id">Поставщик</label>
+            <select id="supplier_id" name="supplier_id">
+                <option value="">Не выбрано</option>
+                {% for supplier in suppliers %}
+                <option value="{{ supplier.id }}" {% if product.supplier_id == supplier.id %}selected{% endif %}>{{ supplier.supplier_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="main_image_url">Главное изображение (URL)</label>
+            <input type="url" id="main_image_url" name="main_image_url" value="{{ product.main_image_url|default:'' }}">
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="image_url_1">Изображение 2 (URL)</label>
+                <input type="url" id="image_url_1" name="image_url_1" value="{{ product.image_url_1|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label for="image_url_2">Изображение 3 (URL)</label>
+                <input type="url" id="image_url_2" name="image_url_2" value="{{ product.image_url_2|default:'' }}">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="image_url_3">Изображение 4 (URL)</label>
+                <input type="url" id="image_url_3" name="image_url_3" value="{{ product.image_url_3|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label for="image_url_4">Изображение 5 (URL)</label>
+                <input type="url" id="image_url_4" name="image_url_4" value="{{ product.image_url_4|default:'' }}">
+            </div>
+        </div>
+
+        <div class="sizes-section">
+            <h3 style="margin: 0 0 16px 0; font-size: 18px;">Размеры товара</h3>
+            <div id="sizes-container">
+                {% if product %}
+                    {% for size in product.sizes.all %}
+                    <div class="size-item">
+                        <input type="hidden" name="size_id" value="{{ size.id }}">
+                        <input type="text" name="size_label" value="{{ size.size_label }}" placeholder="Размер (например, S, M, L)">
+                        <input type="number" name="size_stock" value="{{ size.size_stock }}" placeholder="Остаток" min="0">
+                        <button type="button" class="remove-size" onclick="this.parentElement.remove()">Удалить</button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <button type="button" class="add-size" onclick="addSizeField()">+ Добавить размер</button>
+        </div>
+
+        <div class="tags-section">
+            <h3 style="margin: 0 0 16px 0; font-size: 18px;">Теги</h3>
+            <div class="tags-checkboxes">
+                {% for tag in tags %}
+                <label>
+                    <input type="checkbox" name="tags" value="{{ tag.id }}" {% if tag.id in product_tags %}checked{% endif %}>
+                    {{ tag.tag_name }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" id="submit-btn">Сохранить</button>
+            <a href="{% url 'manager_products_list' %}">Отмена</a>
+        </div>
+    </form>
+</div>
+
+<script>
+function addSizeField() {
+    const container = document.getElementById('sizes-container');
+    const div = document.createElement('div');
+    div.className = 'size-item';
+    div.innerHTML = `
+        <input type="hidden" name="size_id" value="">
+        <input type="text" name="size_label" placeholder="Размер (например, S, M, L)">
+        <input type="number" name="size_stock" placeholder="Остаток" min="0" value="0">
+        <button type="button" class="remove-size" onclick="this.parentElement.remove()">Удалить</button>
+    `;
+    container.appendChild(div);
+}
+
+document.getElementById('product-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const errorDiv = document.getElementById('form-error');
+    const submitBtn = document.getElementById('submit-btn');
+    errorDiv.style.display = 'none';
+    
+    // Собираем данные формы
+    const sizes = [];
+    document.querySelectorAll('.size-item').forEach(item => {
+        const sizeId = item.querySelector('input[name="size_id"]').value;
+        const sizeLabel = item.querySelector('input[name="size_label"]').value.trim();
+        const sizeStock = item.querySelector('input[name="size_stock"]').value;
+        if (sizeLabel) {
+            sizes.push({
+                id: sizeId || null,
+                size_label: sizeLabel,
+                size_stock: parseInt(sizeStock) || 0
+            });
+        }
+    });
+    
+    const tags = [];
+    document.querySelectorAll('input[name="tags"]:checked').forEach(checkbox => {
+        tags.push(parseInt(checkbox.value));
+    });
+    
+    const data = {
+        product_name: document.getElementById('product_name').value.trim(),
+        product_description: document.getElementById('product_description').value.trim(),
+        price: parseFloat(document.getElementById('price').value) || 0,
+        discount: parseFloat(document.getElementById('discount').value) || 0,
+        stock_quantity: parseInt(document.getElementById('stock_quantity').value) || 0,
+        is_available: document.querySelector('input[name="is_available"]').checked,
+        category_id: document.getElementById('category_id').value || null,
+        brand_id: document.getElementById('brand_id').value || null,
+        supplier_id: document.getElementById('supplier_id').value || null,
+        main_image_url: document.getElementById('main_image_url').value.trim() || null,
+        image_url_1: document.getElementById('image_url_1').value.trim() || null,
+        image_url_2: document.getElementById('image_url_2').value.trim() || null,
+        image_url_3: document.getElementById('image_url_3').value.trim() || null,
+        image_url_4: document.getElementById('image_url_4').value.trim() || null,
+        sizes: sizes,
+        tags: tags
+    };
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Сохранение...';
+    
+    try {
+        {% if product %}
+        const result = await ManagementAPI.products.update({{ product.id }}, data);
+        {% else %}
+        const result = await ManagementAPI.products.create(data);
+        {% endif %}
+        
+        if (result.success) {
+            window.location.href = '{% url "manager_products_list" %}';
+        } else {
+            errorDiv.textContent = result.error || 'Ошибка при сохранении товара';
+            errorDiv.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Сохранить';
+        }
+    } catch(err) {
+        errorDiv.textContent = 'Ошибка соединения: ' + err.message;
+        errorDiv.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Сохранить';
+    }
+});
+</script>
+{% endblock %}
+

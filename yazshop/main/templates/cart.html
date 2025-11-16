@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Корзина - YazShop{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/cart.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="cart-page">
+    <h2 class="cart-title">Ваша корзина</h2>
+
+    {% if cart.items.all %}
+    <div class="cart-container">
+        {% for item in cart.items.all %}
+        <div class="cart-item">
+            <div class="cart-item-left">
+                <a href="{{ item.product.get_absolute_url }}">
+                    {% if item.product.main_image_url %}
+                        <img src="{{ item.product.main_image_url }}" alt="{{ item.product.product_name }}" class="cart-item-image">
+                    {% else %}
+                        <div class="cart-item-noimage">Нет изображения</div>
+                    {% endif %}
+                </a>
+            </div>
+
+            <div class="cart-item-right">
+                <h3 class="product-name">
+                    <a href="{{ item.product.get_absolute_url }}">{{ item.product.product_name }}</a>
+                </h3>
+
+                <div class="product-size">
+                    {% if item.size %}
+                        Размер: <span>{{ item.size.size_label }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="product-price">
+                    {{ item.unit_price }} ₽
+                </div>
+
+                <div class="quantity-control">
+                    <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{% if item.size %}{{ item.size.size_stock }}{% else %}{{ item.product.stock_quantity }}{% endif %}" class="qty-input" data-item-id="{{ item.id }}" data-max="{% if item.size %}{{ item.size.size_stock }}{% else %}{{ item.product.stock_quantity }}{% endif %}">
+                    <button type="button" class="btn-small update-qty-btn" data-item-id="{{ item.id }}">Обновить</button>
+                </div>
+                <div class="error-message" id="error-{{ item.id }}" style="display: none; color: #e74c3c; font-size: 12px; margin-top: 4px;"></div>
+
+                <div class="product-subtotal" id="subtotal-{{ item.id }}">
+                    <strong>{{ item.subtotal }} ₽</strong>
+                </div>
+
+                <button type="button" class="btn-danger remove-item-btn" data-item-id="{{ item.id }}">Удалить</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="cart-summary">
+        <div class="cart-total">
+            <span>Итого:</span>
+            <strong>{{ cart.total_price }} ₽</strong>
+        </div>
+        <div class="cart-actions">
+            <a href="{% url 'catalog' %}" class="btn-outline">← Продолжить покупки</a>
+            <a href="{% url 'checkout' %}" class="btn-primary">Оформить заказ</a>
+        </div>
+    </div>
+
+    {% else %}
+    <p class="empty-cart">Ваша корзина пуста</p>
+    {% endif %}
+</div>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if(document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for(let cookie of cookies){
+            cookie = cookie.trim();
+            if(cookie.startsWith(name + '=')){
+                cookieValue = decodeURIComponent(cookie.slice(name.length + 1));
+                break;
+            }
+        }
+    }
+    if(!cookieValue){
+        const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if(csrfInput) cookieValue = csrfInput.value;
+    }
+    return cookieValue;
+}
+
+// Загрузка корзины
+async function loadCart() {
+    try {
+        const response = await fetch('/api/cart/', {
+            method: 'GET',
+            headers: {'X-CSRFToken': getCookie('csrftoken')},
+            credentials: 'same-origin'
+        });
+        if (response.ok) {
+            const data = await response.json();
+            // Обновляем общую сумму
+            if (data.total_price) {
+                const totalElement = document.querySelector('.cart-total strong');
+                if (totalElement) {
+                    totalElement.textContent = parseFloat(data.total_price).toFixed(0) + ' ₽';
+                }
+            }
+        }
+    } catch(err) {
+        console.error('Ошибка загрузки корзины:', err);
+    }
+}
+
+// Обновление количества товара
+document.querySelectorAll('.update-qty-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        const itemId = this.dataset.itemId;
+        const qtyInput = document.querySelector(`.qty-input[data-item-id="${itemId}"]`);
+        const errorMessage = document.getElementById(`error-${itemId}`);
+        const submitButton = this;
+        const requestedQty = parseInt(qtyInput.value);
+        const maxQty = parseInt(qtyInput.getAttribute('data-max')) || 999;
+        
+        errorMessage.style.display = 'none';
+        
+        if (requestedQty > maxQty) {
+            errorMessage.textContent = `Недостаточно товара на складе. Доступно: ${maxQty}`;
+            errorMessage.style.display = 'block';
+            qtyInput.value = maxQty;
+            return;
+        }
+        
+        submitButton.disabled = true;
+        submitButton.textContent = 'Обновление...';
+        
+        try {
+            const response = await fetch(`/api/cart/items/${itemId}/`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ quantity: requestedQty })
+            });
+            const result = await response.json();
+            
+            if (result.success && result.cart) {
+                // Обновляем сумму товара
+                const subtotalElement = document.getElementById(`subtotal-${itemId}`).querySelector('strong');
+                if (subtotalElement && result.cart.items) {
+                    const item = result.cart.items.find(i => i.id == itemId);
+                    if (item) {
+                        const subtotal = parseFloat(item.unit_price) * item.quantity;
+                        subtotalElement.textContent = subtotal.toFixed(0) + ' ₽';
+                    }
+                }
+                
+                // Обновляем общую сумму
+                const totalElement = document.querySelector('.cart-total strong');
+                if (totalElement && result.cart.total_price) {
+                    totalElement.textContent = parseFloat(result.cart.total_price).toFixed(0) + ' ₽';
+                }
+                
+                errorMessage.style.display = 'none';
+            } else {
+                errorMessage.textContent = result.error || 'Ошибка при обновлении';
+                errorMessage.style.display = 'block';
+            }
+        } catch(err) {
+            errorMessage.textContent = 'Ошибка соединения: ' + err.message;
+            errorMessage.style.display = 'block';
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Обновить';
+        }
+    });
+});
+
+// Удаление товара из корзины
+document.querySelectorAll('.remove-item-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        const itemId = this.dataset.itemId;
+        
+        if (!confirm('Удалить товар из корзины?')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/cart/items/${itemId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                credentials: 'same-origin'
+            });
+            
+            if (response.ok || response.status === 204) {
+                // Удаляем элемент из DOM
+                const cartItem = this.closest('.cart-item');
+                if (cartItem) {
+                    cartItem.remove();
+                }
+                
+                // Проверяем, остались ли товары в корзине
+                const remainingItems = document.querySelectorAll('.cart-item');
+                if (remainingItems.length === 0) {
+                    location.reload();
+                } else {
+                    // Обновляем общую сумму
+                    loadCart();
+                }
+            } else {
+                const result = await response.json();
+                alert(result.error || 'Ошибка при удалении товара');
+            }
+        } catch(err) {
+            alert('Ошибка соединения: ' + err.message);
+        }
+    });
+});
+
+// Загружаем корзину при загрузке страницы
+loadCart();
+</script>
+{% endblock %}

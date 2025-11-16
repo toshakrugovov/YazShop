@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}YazShop - Магазин модной одежды{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<!-- Promo Ticker -->
+{% if promotions %}
+<section class="promo-ticker">
+    <div class="ticker-content">
+        {% for promo in promotions %}
+        <span class="promo-item">{{ promo.promo_code }} – Скидка {{ promo.discount }}%</span>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Hero Section -->
+<section class="hero autumn-hero">
+    <div class="hero-overlay"></div>
+    <div class="container">
+        <h1>New Autumn Drop</h1>
+        <p>Откройте для себя новую коллекцию осенней одежды</p>
+        <div class="hero-buttons">
+            <a href="/catalog/" class="btn btn-primary">Смотреть каталог</a>
+        </div>
+    </div>
+</section>
+
+<!-- Promo Ticker between blocks -->
+<section class="promo-ticker">
+    <div class="ticker-content">
+        {% if promotions %}
+            {% for promo in promotions %}
+                <span class="promo-item">{{ promo.promo_code }} – Скидка {{ promo.discount }}%</span>
+            {% endfor %}
+        {% else %}
+            <span class="promo-item">Добро пожаловать в YazShop</span>
+            <span class="promo-item">Бесплатная доставка от 5000 ₽</span>
+        {% endif %}
+    </div>
+</section>
+
+<!-- New Products -->
+{% if new_products %}
+<section class="products-section">
+    <div class="container">
+        <h2 class="section-title">Новинки</h2>
+        <div class="products-grid">
+            {% for product in new_products %}
+            <div class="product-card">
+                {% if product.is_new %}
+                <div class="new-badge">NEW</div>
+                {% endif %}
+                <div class="product-image">
+                    {% if product.main_image_url %}
+                        <img src="{{ product.main_image_url }}" alt="{{ product.product_name }}">
+                    {% else %}
+                        Изображение товара
+                    {% endif %}
+                </div>
+                <div class="product-info">
+                    <h3 class="product-name">{{ product.product_name }}</h3>
+                    <div class="product-price">
+                        {% if product.discount > 0 %}
+                            <span class="product-old-price">{{ product.price }} ₽</span>
+                            {{ product.final_price|floatformat:0 }} ₽
+                            <span class="product-discount">-{{ product.discount }}%</span>
+                        {% else %}
+                            {{ product.price }} ₽
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Popular Products -->
+{% if popular_products %}
+<section class="products-section">
+    <div class="container">
+        <h2 class="section-title">Популярные товары</h2>
+        <div class="products-grid">
+            {% for product in popular_products %}
+            <div class="product-card">
+                {% if product.is_new %}
+                <div class="new-badge">NEW</div>
+                {% endif %}
+                <div class="product-image">
+                    {% if product.main_image_url %}
+                        <img src="{{ product.main_image_url }}" alt="{{ product.product_name }}">
+                    {% else %}
+                        Изображение товара
+                    {% endif %}
+                </div>
+                <div class="product-info">
+                    <h3 class="product-name">{{ product.product_name }}</h3>
+                    <div class="product-price">
+                        {% if product.discount > 0 %}
+                            <span class="product-old-price">{{ product.price }} ₽</span>
+                            {{ product.final_price|floatformat:0 }} ₽
+                            <span class="product-discount">-{{ product.discount }}%</span>
+                        {% else %}
+                            {{ product.price }} ₽
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+
+{% endblock %}

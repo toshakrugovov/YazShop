@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Аналитика - YazShop{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>Аналитика и отчёты</h1>
+        <div class="dashboard-actions">
+            <a href="{% url 'manager_dashboard' %}">← Назад</a>
+            <a href="{% url 'manager_analytics_export_csv' %}?type=sales">Экспорт CSV (Продажи)</a>
+            <a href="{% url 'manager_analytics_export_csv' %}?type=products">Экспорт CSV (Товары)</a>
+            <a href="{% url 'manager_analytics_export_csv' %}?type=users">Экспорт CSV (Пользователи)</a>
+            <a href="{% url 'manager_analytics_export_pdf' %}">Экспорт PDF</a>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Заказов сегодня</h3>
+            <div class="value">{{ orders_today }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Заказов за неделю</h3>
+            <div class="value">{{ orders_week }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Заказов за месяц</h3>
+            <div class="value">{{ orders_month }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Выручка сегодня</h3>
+            <div class="value">{{ revenue_today }} ₽</div>
+        </div>
+        <div class="stat-card">
+            <h3>Выручка за неделю</h3>
+            <div class="value">{{ revenue_week }} ₽</div>
+        </div>
+        <div class="stat-card">
+            <h3>Выручка за месяц</h3>
+            <div class="value">{{ revenue_month }} ₽</div>
+        </div>
+    </div>
+
+    {% if product_of_week %}
+    <div class="analytics-section">
+        <h2>🏆 Товар недели</h2>
+        <div class="analytics-item">
+            <div>
+                <strong>{{ product_of_week.product_name }}</strong>
+                <div style="font-size: 14px; color: var(--text-color-secondary); margin-top: 4px;">
+                    Продано: {{ product_of_week.total_sold|default:0 }} шт. | 
+                    Выручка: {{ product_of_week.total_revenue|default:0 }} ₽
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if product_of_month %}
+    <div class="analytics-section">
+        <h2>🏆 Товар месяца</h2>
+        <div class="analytics-item">
+            <div>
+                <strong>{{ product_of_month.product_name }}</strong>
+                <div style="font-size: 14px; color: var(--text-color-secondary); margin-top: 4px;">
+                    Продано: {{ product_of_month.total_sold|default:0 }} шт. | 
+                    Выручка: {{ product_of_month.total_revenue|default:0 }} ₽
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if popular_products %}
+    <div class="analytics-section">
+        <h2>Популярные товары (за месяц)</h2>
+        {% for product in popular_products %}
+        <div class="analytics-item">
+            <div>
+                <strong>{{ product.product_name }}</strong>
+                <div style="font-size: 14px; color: var(--text-color-secondary); margin-top: 4px;">
+                    Продано: {{ product.total_sold|default:0 }} шт. | 
+                    Выручка: {{ product.total_revenue|default:0 }} ₽
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if category_stats %}
+    <div class="section">
+        <h2>Статистика по категориям</h2>
+        <div class="category-header">
+            <div>Категория</div>
+            <div>Товаров</div>
+            <div>Продано</div>
+            <div>Выручка</div>
+        </div>
+        {% for cat in category_stats %}
+        <div class="category-item">
+            <div><strong>{{ cat.category_name }}</strong></div>
+            <div>{{ cat.total_products|default:0 }}</div>
+            <div>{{ cat.total_sold|default:0 }} шт.</div>
+            <div>{{ cat.total_revenue|default:0 }} ₽</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

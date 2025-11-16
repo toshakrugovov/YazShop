@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Контакты - YazShop{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/contacts.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="contacts-container">
+  <div class="store-block">
+    <h2>Наш магазин</h2>
+    <img src="{% static '\images\store-photo.png' %}" alt="Фото магазина YazShop" class="store-image">
+  </div>
+  <div class="contacts-block">
+    <h1>Контакты</h1>
+    <div class="contacts-time">Часы работы: 10:00 - 22:00, ежедневно</div>
+    <div class="contacts-row">
+      <span class="contacts-label">Телефон:</span>
+      <a class="phone contacts-link" href="tel:+79622127912">+7 (985) 219-95-00</a>
+    </div>
+    <div class="contacts-row">
+      <span class="contacts-label">Email:</span>
+      <a class="contacts-link" href="mailto:pr@yaz.ru">pr@yaz.ru</a>
+    </div>
+    <div class="contacts-row">
+      <span class="contacts-label"></span>
+      <a class="contacts-link" href="mailto:info@yaz.ru">info@yaz.ru</a>
+    </div>
+    <div class="contacts-row">
+      <span class="contacts-label"></span>
+      <a class="contacts-link" href="mailto:warehouse@yaz.ru">warehouse@yaz.ru</a>
+    </div>
+    <div class="contacts-row">
+      <span class="contacts-label"></span>
+      <a class="contacts-link" href="mailto:casting@yaz.ru">casting@yaz.ru</a>
+    </div>
+    <div class="contacts-info">
+      Мы используем cookie-файлы для улучшения пользовательского опыта.<br>
+      Подробнее можно узнать в <a class="contacts-link" href="/privacy/">политике конфиденциальности</a>.
+    </div>
+  </div>
+</div>
+
+<div class="yandex-map" id="yandexMap"></div>
+
+<script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
+<script>
+  ymaps.ready(init);
+  function init() {
+    var myMap = new ymaps.Map("yandexMap", {
+      center: [55.763338, 37.622521],
+      zoom: 16,
+      controls: ['zoomControl']
+    });
+    var placemark = new ymaps.Placemark(myMap.getCenter(), {
+      balloonContent: 'YazShop - наш магазин'
+    }, {
+      preset: 'islands#redDotIcon'
+    });
+    myMap.geoObjects.add(placemark);
+  }
+</script>
+{% endblock %}

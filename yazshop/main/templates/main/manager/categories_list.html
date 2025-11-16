@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Категории и бренды - YazShop{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="form-wrap">
+    <div style="margin-bottom: 20px;">
+        <a href="{% url 'manager_dashboard' %}" class="table-actions-header a">← Назад</a>
+    </div>
+    <div class="dashboard-header">
+        <h1>Категории и бренды</h1>
+    </div>
+
+    <div class="sections-grid">
+        <div class="section-box">
+            <div class="section-header">
+                <h2>Категории</h2>
+                <a href="{% url 'manager_category_add' %}">+ Добавить</a>
+            </div>
+            <ul class="section-list">
+                {% for category in categories %}
+                <li class="section-item">
+                    <div>
+                        <strong>{{ category.category_name }}</strong>
+                        {% if category.parent_category %}
+                        <span style="color: var(--text-color-secondary); font-size: 12px;">({{ category.parent_category.category_name }})</span>
+                        {% endif %}
+                    </div>
+                    <div class="section-item-actions">
+                        <a href="{% url 'manager_category_edit' category_id=category.id %}">Изменить</a>
+                    </div>
+                </li>
+                {% empty %}
+                <li class="section-item">Нет категорий</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="section-box">
+            <div class="section-header">
+                <h2>Бренды</h2>
+                <a href="{% url 'manager_brand_add' %}">+ Добавить</a>
+            </div>
+            <ul class="section-list">
+                {% for brand in brands %}
+                <li class="section-item">
+                    <div>
+                        <strong>{{ brand.brand_name }}</strong>
+                        {% if brand.brand_country %}
+                        <span style="color: var(--text-color-secondary); font-size: 12px;">({{ brand.brand_country }})</span>
+                        {% endif %}
+                    </div>
+                    <div class="section-item-actions">
+                        <a href="{% url 'manager_brand_edit' brand_id=brand.id %}">Изменить</a>
+                    </div>
+                </li>
+                {% empty %}
+                <li class="section-item">Нет брендов</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

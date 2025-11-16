@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Панель администратора - YazShop{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>Панель администратора</h1>
+        <div class="dashboard-actions">
+            <a href="{% url 'profile' %}">В профиль</a>
+            <a href="/admin/">Django Admin</a>
+        </div>
+    </div>
+
+    <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 32px;">
+        <div class="dashboard-card">
+            <h3>{{ stats.total_users }}</h3>
+            <p>Всего пользователей</p>
+        </div>
+        <div class="dashboard-card">
+            <h3>{{ stats.total_products }}</h3>
+            <p>Всего товаров</p>
+        </div>
+        <div class="dashboard-card">
+            <h3>{{ stats.total_orders }}</h3>
+            <p>Всего заказов</p>
+        </div>
+        <div class="dashboard-card">
+            <h3>{{ stats.total_tickets }}</h3>
+            <p>Всего обращений</p>
+        </div>
+        <div class="dashboard-card">
+            <h3>{{ stats.new_tickets }}</h3>
+            <p>Новых обращений</p>
+        </div>
+        <div class="dashboard-card">
+            <h3>{{ stats.recent_activity }}</h3>
+            <p>Действий за неделю</p>
+        </div>
+        <div class="dashboard-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <h3>{{ stats.org_balance }} ₽</h3>
+            <p>Баланс организации</p>
+        </div>
+        <div class="dashboard-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+            <h3>{{ stats.org_tax_reserve }} ₽</h3>
+            <p>Резерв на налоги</p>
+        </div>
+    </div>
+
+    <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+        {% for block in blocks %}
+        <div class="dashboard-card" style="padding: 24px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-color); transition: transform 0.2s, box-shadow 0.2s;">
+            <h3 style="margin: 0 0 12px 0; font-size: 20px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 24px;">{{ block.icon }}</span>
+                {{ block.title }}
+            </h3>
+            <p style="margin: 0 0 16px 0; color: var(--text-color-secondary); font-size: 14px; line-height: 1.5;">{{ block.desc }}</p>
+            <a href="{% url block.url %}" class="btn">Открыть</a>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if stats.recent_logs %}
+    <div class="data-section">
+        <h3>Последние действия</h3>
+        <ul class="data-list">
+            {% for log in stats.recent_logs %}
+            <li class="log-item">
+                <strong>{{ log.user.username|default:"Система" }}</strong> - 
+                {{ log.action_description|default:log.action_type }} 
+                <span style="color: var(--text-color-secondary); font-size: 12px;">
+                    ({{ log.created_at|date:"d.m.Y H:i" }})
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
