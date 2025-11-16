@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -o errexit
 
-# Обновляем pip, setuptools и wheel
+# Обновляем инструменты сборки
 pip install --upgrade pip setuptools wheel
 
 # Устанавливаем зависимости через готовые бинарные колеса
 pip install --prefer-binary -r requirements.txt
 
-# Миграции
+# Применяем миграции
 python manage.py migrate
 
-# Сбор статических файлов
+# Собираем статические файлы
 python manage.py collectstatic --noinput
