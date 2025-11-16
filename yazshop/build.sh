@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -o errexit
 
-# Обновление инструментов сборки
+# Обновляем pip, setuptools и wheel
 pip install --upgrade pip setuptools wheel
 
-# Установка зависимостей
-pip install -r requirements.txt
+# Устанавливаем зависимости через готовые бинарные колеса
+pip install --prefer-binary -r requirements.txt
 
 # Миграции
 python manage.py migrate
